@@ -23,6 +23,7 @@ ARGS = parser.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv
 import bpy  # noqa: E402  (after --help, which must work without Blender)
 from mathutils import Vector  # noqa: E402
 
+GLOW, LIGHT = .68, .55  # overall brightness of the neons, and of the lamps
 YELLOW, CYAN, RED, LILAC, WHITE = "ffc83d", "35d6e8", "ff4d4d", "a9b0e8", "f7f2e8"
 
 
@@ -48,7 +49,7 @@ def mat(rgb, glow=0.0, alpha=1.0):
         m.surface_render_method = "BLENDED"
     if glow:
         n.inputs["Emission Color"].default_value = linear(rgb)
-        n.inputs["Emission Strength"].default_value = glow
+        n.inputs["Emission Strength"].default_value = glow * GLOW
     return m
 
 
@@ -114,9 +115,10 @@ def mina(left=(-.46, -.02, .72), right=(.46, -.02, .72)):
         limb((.25 * s, 0, 1.16), hand, .11, .08, hoodie)
         ico(hand, .085, skin, sub=1)
     ico((0, .08, 1.63), .34, hair, (1.06, 1, 1))
-    box((0, .06, 1.45), (.66, .34, .32), hair)
+    for s in (-1, 1):
+        ico((.27 * s, .04, 1.47), .19, hair, (.5, .9, 1.25))
     ico((0, -.03, 1.54), .28, skin, (1, .98, 1.05))
-    box((0, -.19, 1.73), (.46, .13, .12), hair, (-12, 0, 0))
+    ico((0, -.17, 1.74), .22, hair, (1.2, .6, .5))
     for s in (-1, 1):
         ico((.115 * s, -.3, 1.55), .04, "14121c", (1, .5, 1.3), sub=1)
         ring((.115 * s, -.31, 1.55), .1, .014, CYAN, (90, 0, 0), glow=1.2, n=10)
@@ -240,7 +242,7 @@ def panel():
 def light(loc, energy, color, size, target=(0, 0, 1)):
     bpy.ops.object.light_add(type="AREA", location=loc)
     o = bpy.context.object
-    o.data.energy, o.data.color, o.data.size = energy, linear(color)[:3], size
+    o.data.energy, o.data.color, o.data.size = energy * LIGHT, linear(color)[:3], size
     o.rotation_euler = (Vector(target) - Vector(loc)).to_track_quat("-Z", "Y").to_euler()
 
 
@@ -263,7 +265,7 @@ def staged():
     for i in range(9):
         for j in range(11):
             lit = rng.random() if j < 8 else 0  # dark behind the panel and the subtitle
-            color, glow = ("ffd27a", .9) if lit > .9 else ("8fa6ff", .5) if lit > .84 else ("141a4a", 0.0)
+            color, glow = ("ffd27a", .5) if lit > .9 else ("8fa6ff", .28) if lit > .84 else ("141a4a", 0.0)
             box((-2.0 + i * .5, 2.3, .35 + j * .5), (.34, .06, .34), color, glow=glow)
     box((.85, -.28, .42), (1.5, .5, .84), "4a2f52")
     box((.85, -.3, .87), (1.62, .6, .07), "7b4d63")
@@ -274,7 +276,7 @@ def staged():
     place(lambda: page(.46, .56), (.32, -.45, 1.17), -12, 1, -18)
     place(lumi, (0, -.1, 1.62), 8, .75)
     place(panel, (0, -.1, 3.55), 0, 1.02, 0)
-    text("It wants two. You gave one.", 0, 4.5, .19, WHITE, .9, bold=0, y=-.1)
+    text("It wants two. You gave one.", 0, 4.5, .19, WHITE, 1.2, bold=0, y=-.1)
     light((-2.4, -3.2, 3.2), 190, "ffd2a0", 1.2)
     light((2.6, 1.4, 2.6), 260, "4a6cff", 1.0)
     light((1.4, -3.2, 1.2), 45, "7f8cff", 2.0)
@@ -287,8 +289,8 @@ def bloom(scene):
     layers, glare, out = (tree.nodes.new(t) for t in ("CompositorNodeRLayers", "CompositorNodeGlare",
                                                       "NodeGroupOutput"))
     glare.inputs["Type"].default_value = "Bloom"
-    glare.inputs["Threshold"].default_value = .9
-    glare.inputs["Strength"].default_value = .55
+    glare.inputs["Threshold"].default_value = .6
+    glare.inputs["Strength"].default_value = .28
     glare.inputs["Size"].default_value = .45
     tree.links.new(layers.outputs["Image"], glare.inputs["Image"])
     tree.links.new(glare.outputs["Image"], out.inputs[0])
@@ -305,7 +307,7 @@ def render(name):
     scene.world = bpy.data.worlds.new("w")
     scene.world.use_nodes = True
     scene.world.node_tree.nodes["Background"].inputs[0].default_value = linear("0b0d26")
-    scene.world.node_tree.nodes["Background"].inputs[1].default_value = .6
+    scene.world.node_tree.nodes["Background"].inputs[1].default_value = .4
     cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam"))
     scene.collection.objects.link(cam)
     cam.location, cam.data.lens, scene.camera = pos, lens, cam
