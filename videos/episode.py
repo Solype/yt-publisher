@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Make an episode from its JSON: voices, sound, frames, then the MP4. Every step skips what is already made."""
+"""Make an episode from its JSON: voices, sound, frames, then the MP4. Every step skips what is already made.
+The takes of dub.py, in OUT/EPISODE-dub, replace the voices they dub."""
 import argparse
 import hashlib
 import json
@@ -52,12 +53,21 @@ work = os.path.expanduser(f"~/.cache/yt-publisher/{name}")
 os.makedirs(work, exist_ok=True)
 
 
+dub = os.path.join(A.out, f"{name}-dub")
+
+
+def dubbed(n):
+    return os.path.exists(f"{dub}/{n:02}.wav")
+
+
 def wav(n):
     return f"{work}/{n:02}.wav"
 
 
 def stale(n, text):
-    """Whether line n must be said again: no sound yet, or another text."""
+    """Whether line n must be said again: no sound yet, or another text. Never when dub.py has a take of it."""
+    if dubbed(n):
+        return False
     mark = wav(n) + ".txt"
     return not (os.path.exists(wav(n)) and os.path.exists(mark) and open(mark).read() == text)
 
@@ -83,7 +93,7 @@ for take in EP.get("mina_takes", []):
             keep(f"{work}/bella-acted-{k}.wav", n, texts[n])
 print("voices: done", flush=True)
 step("voices")
-print("mix:", run(KOKORO, f"{HERE}/mix.py", "--episode", A.episode, "--dir", work).strip(), flush=True)
+print("mix:", run(KOKORO, f"{HERE}/mix.py", "--episode", A.episode, "--dir", work, "--dub", dub).strip(), flush=True)
 step("mix")
 
 key = hashlib.sha256()

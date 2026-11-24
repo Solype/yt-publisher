@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser(
     "writes mix.wav timeline.json captions.ass in --dir",
     formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument("--dir", default=".", help="directory of the lines, and of the results (default: current)")
+parser.add_argument("--dub", metavar="DIR", help="takes of dub.py: NN.wav and NN.json, each in place of the line NN")
 parser.add_argument("--episode", required=True, help="JSON of the episode (format: videos/episodes/ep0.json)")
 ARGS = parser.parse_args()
 with open(ARGS.episode) as f:
@@ -23,15 +24,30 @@ with open(ARGS.episode) as f:
 import numpy as np  # noqa: E402  (after --help)
 
 
-def load(name):
-    with wave.open(os.path.join(ARGS.dir, name + ".wav")) as w:
+def load(name, folder):
+    with wave.open(os.path.join(folder, name + ".wav")) as w:
         assert (w.getframerate(), w.getnchannels(), w.getsampwidth()) == (SR, 1, 2), name
         return np.frombuffer(w.readframes(w.getnframes()), np.int16) / 32768
 
 
-def trim(x):
-    on = np.flatnonzero(np.abs(x) > .01)
-    return x[max(0, on[0] - SR // 100):on[-1] + SR // 25]
+def trim(x, floor=.01):
+    """The sound without its silent ends, and the seconds cut before it."""
+    on = np.flatnonzero(np.abs(x) > floor)
+    if not len(on):
+        raise SystemExit("a take is silent")
+    first = max(0, on[0] - SR // 100)
+    return x[first:on[-1] + SR // 25], first / SR
+
+
+def line_sound(n):
+    """Its sound, and when it starts if it was dubbed (else None)."""
+    name = f"{n:02}"
+    if not ARGS.dub or not os.path.exists(os.path.join(ARGS.dub, name + ".wav")):
+        return trim(load(name, ARGS.dir))[0], None
+    x = load(name, ARGS.dub)
+    x, skipped = trim(x, max(.01, .06 * np.abs(x).max()))  # a microphone is never silent
+    with open(os.path.join(ARGS.dub, name + ".json")) as f:
+        return x, json.load(f)["at"] + skipped
 
 
 def even(x):
@@ -63,8 +79,9 @@ def chime():
 
 now, lines, voice = EP["lead"], [], []
 for n, line in enumerate(EP["lines"]):
-    x = even(trim(load(f"{n:02}")))
-    now += line["before"]
+    x, at = line_sound(n)
+    x = even(x)
+    now = now + line["before"] if at is None else max(at, now if n else 0)
     lines.append({"who": line["who"], "text": line["text"], "start": round(now, 3), "end": round(now + len(x) / SR, 3)})
     voice.append((now, x))
     now += len(x) / SR
