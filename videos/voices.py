@@ -19,7 +19,9 @@ VOICES = {
     "mina": [("af_heart", 1.1, None), ("af_bella", 1.1, None), ("af_jessica", 1.1, None), ("af_sky", 1.1, None)],
     "stamp": [("am_michael", 1.0, "monotone"), ("am_onyx", 1.1, "metal"), ("bm_lewis", 1.0, "ring"),
               ("am_fenrir", 1.0, "radio"), ("am_onyx", 1.05, "metal92"), ("am_onyx", 1.0, "metal98"),
-              ("am_onyx", .95, "metal104")],
+              ("am_onyx", .95, "metal104"), ("am_adam", 1.05, "chorus"), ("bm_george", 1.0, "speaker"),
+              ("am_eric", 1.05, "half120"), ("bm_daniel", 1.0, "metal100"), ("am_liam", 1.05, "octave"),
+              ("af_kore", 1.05, "half190")],
     "lumi": [("af_nicole", 1.1, None), ("bf_emma", 1.0, None), ("bm_fable", 1.0, None), ("am_puck", 1.0, None)],
 }
 
@@ -63,6 +65,21 @@ def robot(x, sr, effect):
             part = x[i:i + d]
             part += .55 * x[i - d:i - d + len(part)]
         return x
+    if effect.startswith("half"):  # half natural, half at a fixed pitch in Hz
+        flat = monotone(x, sr, int(effect[4:]))
+        return .5 * x / np.abs(x).max() + .6 * flat / np.abs(flat).max()
+    if effect == "chorus":  # three copies, slightly late and moving
+        n = np.arange(len(x))
+        return x + sum(.6 * np.interp(n - sr * (d + .0015 * np.sin(2 * np.pi * f * t)), n, x)
+                       for d, f in ((.009, 1.1), (.016, .7), (.023, .4)))
+    if effect == "octave":  # a second voice one octave below, quieter
+        n, hop = 2048, 512
+        low = np.zeros(len(x) + n)
+        for i in range(0, len(x) - n, hop):
+            low[i:i + n] += np.interp(np.arange(n) / 2 + n / 4, np.arange(n), x[i:i + n]) * np.hanning(n)
+        return x + .5 * low[:len(x)] * np.abs(x).max() / np.abs(low).max()
+    if effect == "speaker":  # a light loudspeaker, without the crushing of radio
+        return np.tanh(2.5 * band(x, sr, 250, 4500) / np.abs(x).max())
     if effect == "ring":
         return x * (.45 + .55 * np.sin(2 * np.pi * 60 * t))
     x = band(x, sr, 350, 2800)  # radio
