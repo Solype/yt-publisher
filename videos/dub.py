@@ -12,6 +12,8 @@ import urllib.parse
 import urllib.request
 import uuid
 
+from env import env
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 CHOICES = os.path.expanduser("~/.config/yt-publisher/eleven-voices.json")
 NAME = re.compile(r"[\w-]{1,64}")
@@ -35,22 +37,6 @@ VIDEO = os.path.join(A.out, f"{name}.mp4")
 TIMELINE = os.path.expanduser(f"~/.cache/yt-publisher/{name}/timeline.json")
 SOUND = os.path.join(os.path.dirname(TIMELINE), "mix.wav")
 DUB = os.path.join(A.out, f"{name}-dub")
-
-
-def env(key, default=None):
-    """The variable, else the one of the nearest .env above this file that has it."""
-    if os.environ.get(key):
-        return os.environ[key]
-    d = HERE
-    while d != os.path.dirname(d):
-        d = os.path.dirname(d)
-        if os.path.exists(f"{d}/.env"):
-            with open(f"{d}/.env") as f:
-                for line in f:
-                    m = re.match(rf"(?:export )?{key}=(.*)$", line.strip())
-                    if m:
-                        return m[1].strip("'\"")
-    return default
 
 
 def eleven(path, data=None, kind=None):
