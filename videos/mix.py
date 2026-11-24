@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
-"""Sound of the extract: lines, stamp blow and low drone, with the timeline and the subtitles that go with it."""
+"""Sound of an episode: lines, stamp blows, chime and drone, with its timeline and its subtitles."""
 import argparse
 import json
 import os
+import re
 import wave
 
-# (who, file, subtitle, silence before in s); Mina's file is cut on its silences, a line is one or several pieces
-SCRIPT = [("stamp", "stamp1", "Refused.", .0), ("mina", (1, 2), "Refused? What do you mean, refused?!", .18),
-          ("stamp", "stamp2", "Line six, column five.", .12), ("mina", (0,), "But I gave it a number!", .15),
-          ("lumi", "lumi1", "It wants two. You gave one.", .25), ("mina", (3,), "Okay, okay! How about now?", .2),
-          ("stamp", "stamp3", "Accepted. Next!", .55)]
 SR, FPS = 48000, 24
 
 parser = argparse.ArgumentParser(
     description=__doc__, epilog="No environment variable. Needs numpy; every WAV is 48 kHz, 16-bit, mono.\n\n"
-    "example:\n  python3 videos/extract_mix.py --dir extract\n\n"
-    "reads  stamp1.wav stamp2.wav stamp3.wav lumi1.wav mina.wav in --dir\n"
+    "example:\n  python3 videos/mix.py --episode videos/episodes/ep0.json --dir work\n\n"
+    "reads  00.wav 01.wav ... (one per line of the episode) in --dir\n"
     "writes mix.wav timeline.json captions.ass in --dir",
     formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument("--dir", default=".", help="directory of the lines, and of the results (default: current)")
+parser.add_argument("--episode", required=True, help="JSON of the episode (format: videos/episodes/ep0.json)")
 ARGS = parser.parse_args()
+with open(ARGS.episode) as f:
+    EP = json.load(f)
 
 import numpy as np  # noqa: E402  (after --help)
 
@@ -33,20 +32,6 @@ def load(name):
 def trim(x):
     on = np.flatnonzero(np.abs(x) > .01)
     return x[max(0, on[0] - SR // 100):on[-1] + SR // 25]
-
-
-def split(x, gap=.55):
-    """The lines of a file, separated by at least gap seconds of silence."""
-    on = np.flatnonzero(np.abs(x) > .004)
-    cuts = np.flatnonzero(np.diff(on) > gap * SR)
-    return [trim(x[a:b + 1]) for a, b in zip(on[np.r_[0, cuts + 1]], on[np.r_[cuts, len(on) - 1]])]
-
-
-def join(pieces, numbers, pause=.4):
-    out = [pieces[numbers[0]]]
-    for n in numbers[1:]:
-        out += [np.zeros(int(pause * SR)), pieces[n]]
-    return np.concatenate(out)
 
 
 def even(x):
@@ -71,24 +56,43 @@ def drone(n):
     return low * (.85 + .15 * np.sin(2 * np.pi * .23 * t))
 
 
-mina = split(load("mina"))
-assert len(mina) == 4, f"expected 4 pieces of Mina, found {len(mina)}"
-now, lines, voice = .85, [], []
-for who, source, text, before in SCRIPT:
-    x = even(join(mina, source) if who == "mina" else trim(load(source)))
-    now += before
-    lines.append({"who": who, "text": text, "start": round(now, 3), "end": round(now + len(x) / SR, 3)})
+def chime():
+    t = np.arange(int(1.2 * SR)) / SR
+    return sum(a * np.sin(2 * np.pi * f * t) * np.exp(-d * t) for f, a, d in ((1318, .5, 4), (1975, .3, 5), (2637, .15, 7)))
+
+
+now, lines, voice = EP["lead"], [], []
+for n, line in enumerate(EP["lines"]):
+    x = even(trim(load(f"{n:02}")))
+    now += line["before"]
+    lines.append({"who": line["who"], "text": line["text"], "start": round(now, 3), "end": round(now + len(x) / SR, 3)})
     voice.append((now, x))
     now += len(x) / SR
-total = now + .7
-bams = [lines[0]["start"] - .3, lines[-1]["start"] - .3]
+cut = now + EP["tail"]
+total = cut + EP.get("black", 0)
+
+
+def when(v):
+    """A time: seconds, or s2-.1 (line 2 starts, minus .1 s), m2 (its middle), e2+.3 (its end); lists are walked."""
+    if isinstance(v, list):
+        return [when(i) for i in v]
+    m = re.fullmatch(r"([sme])(\d+)([+-][\d.]+)?", v) if isinstance(v, str) else None
+    if not m:
+        return v
+    line = lines[int(m[2])]
+    at = {"s": line["start"], "e": line["end"], "m": (line["start"] + line["end"]) / 2}[m[1]]
+    return round(at + float(m[3] or 0), 3)
+
+
+cues = {k: when(v) for k, v in EP["cues"].items()}
 mix = drone(int(total * SR))
 mix *= .03 / np.sqrt((mix ** 2).mean())
 mix[:SR // 2] *= np.linspace(0, 1, SR // 2)
-mix[-SR // 2:] *= np.linspace(1, 0, SR // 2)
-for at, x in voice + [(b, .55 * blow()) for b in bams]:
+for at, x in voice + [(b, .55 * blow()) for b in cues.get("bams", [])] + [(b, .12 * chime()) for b in cues.get("chimes", [])]:
     i = int(at * SR)
     mix[i:i + len(x)] += x[:len(mix) - i]
+mix[int(cut * SR):] = 0
+mix[int(cut * SR) - 480:int(cut * SR)] *= np.linspace(1, 0, 480)
 level = {w: [0.0] * (int(total * FPS) + 1) for w in ("mina", "stamp", "lumi")}
 for line, (at, x) in zip(lines, voice):
     for k in range(int(at * FPS), int((at + len(x) / SR) * FPS) + 1):
@@ -102,7 +106,7 @@ with wave.open(os.path.join(ARGS.dir, "mix.wav"), "wb") as w:
     w.setframerate(SR)
     w.writeframes((np.tanh(mix * 1.2) * 32000).astype(np.int16).tobytes())
 with open(os.path.join(ARGS.dir, "timeline.json"), "w") as f:
-    json.dump({"fps": FPS, "duration": total, "lines": lines, "bams": bams, "level": level}, f)
+    json.dump({"fps": FPS, "duration": total, "cut": cut, "lines": lines, "level": level, **cues}, f)
 
 
 def stamp_time(t):

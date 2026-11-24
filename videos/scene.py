@@ -1,4 +1,4 @@
-"""Animated extract: Mina, Stamp and Lumi at the customs booth, one PNG per frame (run inside Blender)."""
+"""Frames of an episode: Mina, Stamp and Lumi at the customs booth, one PNG per frame (run inside Blender)."""
 import argparse
 import json
 import math
@@ -7,12 +7,12 @@ import sys
 import time
 
 parser = argparse.ArgumentParser(
-    prog="blender -b -P videos/extract.py --", description=__doc__,
-    epilog="No environment variable. Needs Blender 5, the Inter font, and the timeline.json of extract_mix.py.\n"
+    prog="blender -b -P videos/scene.py --", description=__doc__,
+    epilog="No environment variable. Needs Blender 5, the Inter font, and the timeline.json of mix.py.\n"
            "Frames already in --out are skipped, so an interrupted render goes on where it stopped.\n\n"
-           "example:\n  blender -b -P videos/extract.py -- --timeline extract/timeline.json --out extract/frames",
+           "example:\n  blender -b -P videos/scene.py -- --timeline work/timeline.json --out work/frames",
     formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument("--timeline", required=True, help="timeline.json written by extract_mix.py")
+parser.add_argument("--timeline", required=True, help="timeline.json written by mix.py")
 parser.add_argument("--out", required=True, help="directory of the frames")
 parser.add_argument("--at", type=float, nargs="+", metavar="SECONDS", help="render only the frames at these times")
 parser.add_argument("--scale", type=int, default=67, help="percent of 1080x1920 (default: 67)")
@@ -27,7 +27,9 @@ import characters as c  # noqa: E402
 
 with open(ARGS.timeline) as f:
     T = json.load(f)
-L, FPS, BAM = T["lines"], T["fps"], T["bams"]
+FPS, BAM = T["fps"], T.get("bams", [])
+p_in, got_one, got_two, accepted = T.get("panel") or [1e9] * 4
+cross_on, cross_off = T.get("cross") or [1e9, 1e9]
 GREEN = "4de08a"
 
 
@@ -107,6 +109,15 @@ for o in named("stamp_head", stamp):
 stamp_limb, = named("stamp_limb", stamp)
 eyes = named("stamp_eye", stamp)
 mouth, = named("mina_mouth", mina)
+neck = bpy.data.objects.new("neck", None)
+scene.collection.objects.link(neck)
+neck.parent, neck.location = mina, (0, 0, 1.32)
+for o in list(mina.children):
+    if o is not neck and o.location.z > 1.33:
+        o.parent = neck
+        o.matrix_parent_inverse = Matrix.Translation((0, 0, -1.32))
+lumi_arm, = named("lumi_arm1", lumi)
+PAGE = page.location.copy()
 arms = {s: (named(f"mina_limb{s}", mina)[0], named(f"mina_hand{s}", mina)[0]) for s in (-1, 1)}
 
 panel = bpy.data.objects.new("panel", None)
@@ -168,24 +179,14 @@ c.bloom(scene)
 
 # ------------------------------------------------------------------ the shots
 
-WIDE = (0, -9, 2.15), (0, 0, 2.05)
-MINA = (-.1, -3.5, 1.72), (-.82, -.25, 1.42)
-STAMP = (.25, -3.5, 1.75), (.82, .3, 1.42)
-PANEL = (.1, -9.1, 2.75), (0, 0, 2.6)
-DESK = (-.35, -3.3, 1.95), (.5, -.1, 1.3)
-got_one = L[4]["start"] + .55 * (L[4]["end"] - L[4]["start"])  # "You gave one"
-got_two = L[5]["start"] + .62 * (L[5]["end"] - L[5]["start"])  # "How about now?"
-SHOTS = [(0, WIDE), (BAM[0] - .12, DESK), (L[1]["start"] - .08, MINA), (L[2]["start"] - .06, STAMP),
-         (L[3]["start"] - .06, MINA), (L[4]["start"] - .1, WIDE), (got_one - .1, PANEL), (L[5]["start"] - .06, MINA),
-         (got_two - .15, PANEL), (BAM[1] - .3, DESK), (L[6]["start"] + .75, WIDE)]
-REST = {-1: Vector((-.46, -.02, .72)), 1: Vector((.46, -.02, .72))}
-OFFER = {-1: Vector((-.5, -.15, .82)), 1: Vector((.3, -.62, 1.06))}
-SHRUG = {-1: Vector((-.66, -.3, 1.08)), 1: Vector((.66, -.3, 1.08))}
-POINT = {-1: Vector((-.5, -.2, .8)), 1: Vector((.3, -.66, 1.34))}
-# (from when, pose)
-POSES = [(0, OFFER), (BAM[0] + .1, REST), (L[1]["start"] + .05, SHRUG), (L[2]["start"] + .2, REST),
-         (L[3]["start"], POINT), (L[4]["start"] + .2, REST), (L[5]["start"], SHRUG), (got_two - .3, OFFER),
-         (L[6]["start"] + .4, REST)]
+CAMS = {"WIDE": ((0, -9, 2.15), (0, 0, 2.05)), "MINA": ((-.1, -3.5, 1.72), (-.82, -.25, 1.42)),
+        "STAMP": ((.25, -3.5, 1.75), (.82, .3, 1.42)), "PANEL": ((.1, -9.1, 2.75), (0, 0, 2.6)),
+        "DESK": ((-.35, -3.3, 1.95), (.5, -.1, 1.3)), "LUMI": ((.1, -3.9, 2.3), (0, -.1, 2.42))}
+POSE = {name: {-1: Vector(a), 1: Vector(b)} for name, a, b in (
+    ("REST", (-.46, -.02, .72), (.46, -.02, .72)), ("OFFER", (-.5, -.15, .82), (.3, -.62, 1.06)),
+    ("SHRUG", (-.66, -.3, 1.08), (.66, -.3, 1.08)), ("POINT", (-.5, -.2, .8), (.3, -.66, 1.34)))}
+LOOK = {"STAMP": (0, 0, 0), "LUMI": (-16, 0, -6), "CAMERA": (0, 0, -34)}  # degrees, from the direction of the body
+SHOTS, POSES, LOOKS = T["shots"], T["poses"], T.get("looks") or [[0, "STAMP"]]
 
 
 def level(who, t):
@@ -196,7 +197,7 @@ def level(who, t):
 def set_frame(t):
     # camera: a slow push inside each shot, and a shake after each blow
     i = max(k for k, s in enumerate(SHOTS) if s[0] <= t)
-    start, (pos, target) = SHOTS[i]
+    start, (pos, target) = SHOTS[i][0], CAMS[SHOTS[i][1]]
     pos, target = Vector(pos), Vector(target)
     pos = pos.lerp(target, min(.06, .03 * (t - start)))
     for b in BAM:
@@ -210,11 +211,16 @@ def set_frame(t):
     talk = level("mina", t)
     mina.location.z = .012 * math.sin(2.2 * t) + .035 * talk
     mina.rotation_euler = (math.radians(-3 * talk), math.radians(2 * math.sin(3 * t) * talk), math.radians(48))
+    look = [v for at, v in LOOKS if at <= t]
+    at = [a for a, _ in LOOKS if a <= t]
+    x = ease(t, at[-1], .22) if len(at) > 1 else 1
+    a, b = LOOK[look[-2] if len(look) > 1 else look[-1]], LOOK[look[-1]]
+    neck.rotation_euler = [math.radians(a[j] + (b[j] - a[j]) * x) for j in range(3)]
     mouth.scale = (.1 + .02 * talk, .03, .02 + .08 * talk)
     k = max(n for n, p in enumerate(POSES) if p[0] <= t)
     x = ease(t, POSES[k][0], .2) if k else 1
     for s, (arm, hand) in arms.items():
-        here = POSES[max(0, k - 1)][1][s].lerp(POSES[k][1][s], x) + Vector((0, 0, .03 * talk))
+        here = POSE[POSES[max(0, k - 1)][1]][s].lerp(POSE[POSES[k][1]][s], x) + Vector((0, 0, .03 * talk))
         hand.location = here
         aim(arm, Vector((.25 * s, 0, 1.16)), here)
 
@@ -224,19 +230,22 @@ def set_frame(t):
     hit = 0.0
     for b in BAM:
         hit = max(hit, ease(t, b - .09, .09) * (1 - ease(t, b + .16, .4)))
-    lift = max(ease(t, b - .5, .35) * (1 - ease(t, b - .09, .05)) for b in BAM)
+    lift = max((ease(t, b - .5, .35) * (1 - ease(t, b - .09, .05)) for b in BAM), default=0)
     hand = (HAND + Vector((0, 0, .1 * lift))).lerp(strike, hit)
     grip.location, grip.rotation_euler = hand, (math.radians(-16 * hit), 0, 0)
     side = math.copysign(1, HAND.x)
     aim(stamp_limb, Vector((.43 * side, 0, 1.0)), hand)
     talk = level("stamp", t)
     stamp.location.z = .12 + .015 * talk - .03 * hit
-    blink = .12 if (t % 3.1) > 2.98 else 1
+    blink = .12 if (t % 3.1) > 2.98 or any(0 <= t - b < .16 for b in T.get("blinks", [])) else 1
     for o in eyes:
         o.scale.z = .16 * blink * (1 - .35 * talk)
 
     # the page: crossed by the first blow, ticked by the second one
-    crossed, ticked = BAM[0] <= t < got_two - .2, t >= BAM[1]
+    crossed, ticked = cross_on <= t < cross_off, t >= T.get("tick", 1e9)
+    if T.get("page_in"):  # slides from Mina to the counter
+        x = ease(t, T["page_in"], .5)
+        page.location = Vector((-.42, -.75, 1.0)).lerp(PAGE, x) + Vector((0, 0, .25 * math.sin(math.pi * x)))
     for o in cross:
         o.hide_render = not crossed
     show(tick, 1.0 if ticked else 0.0)
@@ -244,12 +253,16 @@ def set_frame(t):
 
     # Lumi: floats, grows a little when it talks; the panel comes out of it
     talk = level("lumi", t)
-    lumi.location.z = 1.62 + .05 * math.sin(1.9 * t) + .04 * talk
+    x = t - T.get("lumi_in", -9)
+    drop = 3.2 * math.exp(-4.5 * x) * math.cos(5 * x) if x > 0 else 9
+    lumi.location.z = 1.62 + .05 * math.sin(1.9 * t) + .04 * talk + drop
+    x = ease(t, T.get("lumi_point", 1e9), .25)
+    aim(lumi_arm, Vector((.34, 0, 1.1)), Vector((.52, -.04, 1.22)).lerp(Vector((.82, -.25, .98)), x))
     lumi.scale = [.75 * (1 + .08 * talk)] * 3
     lumi.rotation_euler.z = math.radians(8 + 8 * math.sin(.9 * t))
     for o in lumi.children_recursive:  # its feet would hang at the top of the close-ups
-        o.hide_render = SHOTS[i][1] in (DESK, STAMP, MINA)
-    k = pop(t, L[4]["start"] - .05)
+        o.hide_render = SHOTS[i][1] in ("DESK", "STAMP", "MINA") or t < T.get("lumi_in", -1)
+    k = pop(t, p_in)
     panel.location = Vector((0, -.1, 2.5)).lerp(Vector((0, -.1, 3.55 + .015 * math.sin(1.4 * t))), min(1, k))
     panel.scale = [max(.001, 1.02 * k)] * 3
     two = t >= got_two
@@ -258,7 +271,7 @@ def set_frame(t):
           "hole1": not two, "token1": pop(t, got_two), "red1": not two, "wire1": two,
           "empty0": not one, "bar0": pop(t, got_one), "empty1": not two, "bar1": pop(t, got_two),
           "count0": not one, "count1": pop(t, got_one, got_two), "count2": pop(t, got_two),
-          "refused": t < BAM[1], "accepted": pop(t, BAM[1])}
+          "refused": t < accepted, "accepted": pop(t, accepted)}
     for name, v in on.items():
         show(P[name], float(v) if k > .02 else 0.0)
 

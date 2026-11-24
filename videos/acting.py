@@ -24,6 +24,9 @@ parser.add_argument("--ref", action="append", required=True,
 parser.add_argument("--out", default=".", help="output directory (default: current)")
 parser.add_argument("--tries", type=int, default=3, help="tries per line (default: 3)")
 parser.add_argument("--exaggeration", type=float, default=.7, help="0.5 is neutral (default: 0.7)")
+parser.add_argument("--say", help="play only this text, instead of the audition lines")
+parser.add_argument("--cut", type=int, nargs="+", metavar="WORDS",
+                    help="with --say: also write it in pieces of that many words, VOICE-acted-0.wav and so on")
 ARGS = parser.parse_args()
 
 os.environ["HF_HOME"] = HOME + "/hf"
@@ -41,7 +44,7 @@ builtin = model.conds
 
 
 def words(s):
-    return re.findall(r"[a-z']+", s.lower().replace("ok ", "okay ").replace("ok.", "okay").replace("ok,", "okay"))
+    return re.findall(r"[a-z']+", re.sub(r"(.)\1+", r"\1", s.lower()).replace("ok ", "okay ").replace("ok.", "okay").replace("ok,", "okay"))
 
 
 def review(x, text):
@@ -58,7 +61,7 @@ def review(x, text):
 os.makedirs(ARGS.out, exist_ok=True)
 for ref in ARGS.ref:
     voice, start, parts = os.path.splitext(os.path.basename(ref))[0], time.time(), []
-    for text, pause in LINES:
+    for text, pause in [(ARGS.say, 0)] if ARGS.say else LINES:
         best = None
         for n in range(ARGS.tries):
             torch.manual_seed(11 + n)
@@ -80,14 +83,24 @@ for ref in ARGS.ref:
             print(f"  {voice}: no clean try of '{text}'", flush=True)
         parts += [best[1] / np.abs(best[1]).max() * .6, np.zeros(int(pause * model.sr))]
     sound = np.concatenate(parts)
-    path, raw = os.path.join(ARGS.out, f"{voice}-acted.wav"), os.path.join(ARGS.out, "raw.wav")
-    with wave.open(raw, "wb") as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(model.sr)
-        w.writeframes((sound * 32767).astype(np.int16).tobytes())
-    subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", raw, "-af", "loudnorm=I=-16:TP=-1.5", "-ar", "48000",
-                    path], check=True)
-    os.remove(raw)
-    print(f"{path}: {len(sound) / model.sr:.1f} s of sound in {time.time() - start:.0f} s", flush=True)
+    pieces = [("", sound)]
+    if ARGS.cut:
+        heard, _ = ears.transcribe(librosa.resample(sound.astype(np.float32), orig_sr=model.sr, target_sr=16000),
+                                   word_timestamps=True, condition_on_previous_text=False)
+        heard = [w for s in heard for w in s.words]
+        assert len(heard) == sum(ARGS.cut), f"cannot cut {[w.word for w in heard]} into {ARGS.cut} words"
+        ends = np.cumsum(ARGS.cut)[:-1]
+        marks = [0] + [int((heard[k - 1].end + heard[k].start) / 2 * model.sr) for k in ends] + [len(sound)]
+        pieces += [(f"-{k}", sound[a:b]) for k, (a, b) in enumerate(zip(marks, marks[1:]))]
+    for suffix, sound in pieces:
+        path, raw = os.path.join(ARGS.out, f"{voice}-acted{suffix}.wav"), os.path.join(ARGS.out, "raw.wav")
+        with wave.open(raw, "wb") as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(model.sr)
+            w.writeframes((sound * 32767).astype(np.int16).tobytes())
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", raw, "-af", "loudnorm=I=-16:TP=-1.5", "-ar", "48000",
+                        path], check=True)
+        os.remove(raw)
+        print(f"{path}: {len(sound) / model.sr:.1f} s of sound in {time.time() - start:.0f} s", flush=True)
 sys.exit(0)
