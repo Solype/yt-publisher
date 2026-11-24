@@ -4,7 +4,9 @@ import argparse
 import base64
 import json
 import os
+import re
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -55,13 +57,21 @@ def speak(key, text, style, voice):
     request = urllib.request.Request(
         env("GEMINI_URL", "https://generativelanguage.googleapis.com") + "/v1beta/interactions",
         json.dumps(body).encode(), {"x-goog-api-key": key, "Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(request, timeout=180) as r:
-            answer = json.load(r)
-    except urllib.error.HTTPError as e:
-        sys.exit(f"Gemini {e.code}: {e.read().decode(errors='replace')[:600]}")
-    except urllib.error.URLError as e:
-        sys.exit(f"Gemini: {e.reason}")
+    for left in (2, 1, 0):
+        try:
+            with urllib.request.urlopen(request, timeout=180) as r:
+                answer = json.load(r)
+            break
+        except urllib.error.HTTPError as e:
+            error = e.read().decode(errors="replace")
+            wait = re.search(r"retry in (\d+)", error)
+            # the limit per minute is waited for, the limit per day is not
+            if e.code != 429 or not left or not wait or int(wait[1]) > 90:
+                sys.exit(f"Gemini {e.code}: {error[:600]}")
+            print(f"limit reached, waiting {wait[1]} s", flush=True)
+            time.sleep(int(wait[1]) + 1)
+        except urllib.error.URLError as e:
+            sys.exit(f"Gemini: {e.reason}")
     for step in answer.get("steps", []):
         for part in step.get("content", []) if step.get("type") == "model_output" else []:
             if part.get("type") == "audio":
