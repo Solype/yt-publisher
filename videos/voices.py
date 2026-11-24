@@ -18,7 +18,8 @@ LINES = {
 VOICES = {
     "mina": [("af_heart", 1.1, None), ("af_bella", 1.1, None), ("af_jessica", 1.1, None), ("af_sky", 1.1, None)],
     "stamp": [("am_michael", 1.0, "monotone"), ("am_onyx", 1.1, "metal"), ("bm_lewis", 1.0, "ring"),
-              ("am_fenrir", 1.0, "radio")],
+              ("am_fenrir", 1.0, "radio"), ("am_onyx", 1.05, "metal92"), ("am_onyx", 1.0, "metal98"),
+              ("am_onyx", .95, "metal104")],
     "lumi": [("af_nicole", 1.1, None), ("bf_emma", 1.0, None), ("bm_fable", 1.0, None), ("am_puck", 1.0, None)],
 }
 
@@ -55,8 +56,8 @@ def robot(x, sr, effect):
     t = np.arange(len(x)) / sr
     if effect == "monotone":
         return monotone(x, sr)
-    if effect == "metal":  # deeper, with a short metallic echo
-        x = np.interp(np.arange(0, len(x), .86), np.arange(len(x)), x)
+    if effect.startswith("metal"):  # a short metallic echo; metal90 = 90 % of the pitch, metal = 86 %
+        x = np.interp(np.arange(0, len(x), int(effect[5:] or 86) / 100), np.arange(len(x)), x)
         d = int(.007 * sr)
         for i in range(d, len(x), d):
             part = x[i:i + d]
