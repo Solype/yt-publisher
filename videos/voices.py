@@ -22,7 +22,8 @@ VOICES = {
               ("am_onyx", .95, "metal104"), ("am_adam", 1.05, "chorus"), ("bm_george", 1.0, "speaker"),
               ("am_eric", 1.05, "half120"), ("bm_daniel", 1.0, "metal100"), ("am_liam", 1.05, "octave"),
               ("af_kore", 1.05, "half190")],
-    "lumi": [("af_nicole", 1.1, None), ("bf_emma", 1.0, None), ("bm_fable", 1.0, None), ("am_puck", 1.0, None)],
+    "lumi": [("af_nicole", 1.1, None), ("bf_emma", 1.0, None), ("bm_fable", 1.0, None), ("am_puck", 1.0, None),
+             ("am_michael", 1.15, None), ("am_eric", 1.15, None), ("am_liam", 1.15, None), ("am_echo", 1.15, None)],
 }
 
 parser = argparse.ArgumentParser(
@@ -32,7 +33,11 @@ parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument("--out", default=".", help="output directory (default: current)")
 parser.add_argument("--only", choices=LINES, help="only this character")
+parser.add_argument("--say", metavar="TEXT", help="say only this line, with --only and --voice, into --out/WHO-line.wav")
+parser.add_argument("--voice", type=int, default=1, help="number of the voice for --say (default: 1)")
 ARGS = parser.parse_args()
+if ARGS.say and not ARGS.only:
+    parser.error("--say needs --only")
 
 import numpy as np  # noqa: E402  (after --help, which must work without the Kokoro environment)
 from kokoro_onnx import Kokoro  # noqa: E402
@@ -100,6 +105,12 @@ def save(path, x, sr):
 
 os.makedirs(ARGS.out, exist_ok=True)
 kokoro = Kokoro(f"{KOKORO}/kokoro-v1.0.onnx", f"{KOKORO}/voices-v1.0.bin")
+if ARGS.say:
+    voice, speed, effect = VOICES[ARGS.only][ARGS.voice - 1]
+    x, sr = kokoro.create(ARGS.say, voice=voice, speed=speed, lang="en-gb" if voice[0] == "b" else "en-us")
+    x = np.array(x, float)
+    save(os.path.join(ARGS.out, f"{ARGS.only}-line.wav"), robot(x, sr, effect) if effect else x, sr)
+    sys.exit(0)
 for who in [ARGS.only] if ARGS.only else LINES:
     parts = []
     for n, (voice, speed, effect) in enumerate(VOICES[who], 1):

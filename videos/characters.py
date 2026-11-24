@@ -18,7 +18,8 @@ parser.add_argument("--out", default=".", help="output directory (default: curre
 parser.add_argument("--only", choices=SHOTS, help="render only this shot")
 parser.add_argument("--engine", choices=["eevee", "cycles"], default="eevee", help="default: eevee")
 parser.add_argument("--samples", type=int, default=48, help="default: 48")
-ARGS = parser.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:])
+if __name__ == "__main__":
+    ARGS = parser.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:])
 
 import bpy  # noqa: E402  (after --help, which must work without Blender)
 from mathutils import Vector  # noqa: E402
@@ -102,7 +103,7 @@ def page(w, h, cross=True):
             "444a6b")
     if cross:
         for a in (45, -45):
-            box((0, -.03, 0), (w * .95, .012, h * .13), RED, (0, a, 0), glow=1.4)
+            box((0, -.03, 0), (w * .95, .012, h * .13), RED, (0, a, 0), glow=1.4).name = "cross"
 
 
 def mina(left=(-.46, -.02, .72), right=(.46, -.02, .72)):
@@ -112,8 +113,8 @@ def mina(left=(-.46, -.02, .72), right=(.46, -.02, .72)):
         box((.13 * s, -.06, .06), (.18, .3, .12), WHITE)
     cone((0, 0, .95), .38, .24, .62, hoodie, 7)
     for s, hand in ((-1, left), (1, right)):
-        limb((.25 * s, 0, 1.16), hand, .11, .08, hoodie)
-        ico(hand, .085, skin, sub=1)
+        limb((.25 * s, 0, 1.16), hand, .11, .08, hoodie).name = f"mina_limb{s}"
+        ico(hand, .085, skin, sub=1).name = f"mina_hand{s}"
     ico((0, .08, 1.63), .34, hair, (1.06, 1, 1))
     for s in (-1, 1):
         ico((.27 * s, .04, 1.47), .19, hair, (.5, .9, 1.25))
@@ -123,7 +124,7 @@ def mina(left=(-.46, -.02, .72), right=(.46, -.02, .72)):
         ico((.115 * s, -.3, 1.55), .04, "14121c", (1, .5, 1.3), sub=1)
         ring((.115 * s, -.31, 1.55), .1, .014, CYAN, (90, 0, 0), glow=1.2, n=10)
     box((0, -.315, 1.56), (.05, .02, .02), CYAN, glow=1.2)
-    box((0, -.285, 1.385), (.1, .03, .05), "8e2f35")
+    box((0, -.285, 1.385), (.1, .03, .05), "8e2f35").name = "mina_mouth"
 
 
 def stamp(hand=(.82, -.3, 1.2)):
@@ -134,19 +135,19 @@ def stamp(hand=(.82, -.3, 1.2)):
     box((0, 0, 1.46), (.72, .54, .56), cream)
     box((0, -.275, 1.46), (.58, .02, .38), "0b1020")
     for s in (-1, 1):
-        box((.14 * s, -.29, 1.44), (.11, .012, .16), CYAN, glow=1.3)
+        box((.14 * s, -.29, 1.44), (.11, .012, .16), CYAN, glow=1.3).name = f"stamp_eye{s}"
         box((.14 * s, -.295, 1.57), (.2, .014, .04), CYAN, (0, -16 * s, 0), glow=1.3)
     cone((0, 0, 1.8), .46, .52, .16, navy, 8)
     box((0, -.42, 1.735), (.56, .3, .04), "14121c", (-10, 0, 0))
     cone((0, -.5, 1.81), .085, .085, .04, YELLOW, 6, (90, 0, 0), glow=1.0)
     side = math.copysign(1, hand[0])
     limb((-.43 * side, 0, .98), (-.66 * side, -.1, .72), .08, .07, navy)
-    limb((.43 * side, 0, 1.0), hand, .08, .07, navy)
+    limb((.43 * side, 0, 1.0), hand, .08, .07, navy).name = "stamp_limb"
     x, y, z = hand
-    cone((x, y, z - .02), .07, .11, .28, "9a6236", 8)
-    ico((x, y, z + .15), .14, "9a6236", sub=1)
-    cone((x, y, z - .22), .24, .17, .14, "9a6236", 8)
-    cone((x, y, z - .31), .25, .25, .06, RED, 8, glow=1.2)
+    for part in (cone((x, y, z - .02), .07, .11, .28, "9a6236", 8), ico((x, y, z + .15), .14, "9a6236", sub=1),
+                 cone((x, y, z - .22), .24, .17, .14, "9a6236", 8),
+                 cone((x, y, z - .31), .25, .25, .06, RED, 8, glow=1.2)):
+        part.name = "stamp_head"
 
 
 def lumi():
@@ -176,6 +177,7 @@ def place(build, loc, yaw=0.0, scale=1.0, rot_x=0.0):
         o.parent = pivot
     pivot.location, pivot.scale = loc, [scale] * 3
     pivot.rotation_euler = (math.radians(rot_x), 0, math.radians(yaw))
+    return pivot
 
 
 FONT = []
@@ -258,7 +260,8 @@ def portrait(build, accent, yaw):
     return (0, -5.2, 1.35), (0, 0, .95), 62, (720, 900)
 
 
-def staged():
+def booth():
+    """The customs booth: walls, counter and lamps, without the characters."""
     rng = random.Random(4)  # the same lit pigeonholes at each render
     box((0, 2.4, 2.5), (9, .1, 9), "0a0c28")
     box((0, 0, -.05), (9, 9, .1), "14163a")
@@ -271,15 +274,19 @@ def staged():
     box((.85, -.3, .87), (1.62, .6, .07), "7b4d63")
     frame(.85, .42, 1.1, .42, RED, r=.06, thick=.012, glow=1.2, y=-.55)
     text("CUSTOMS", .85, .42, .2, WHITE, 1.0, y=-.56)
+    light((-2.4, -3.2, 3.2), 190, "ffd2a0", 1.2)
+    light((2.6, 1.4, 2.6), 260, "4a6cff", 1.0)
+    light((1.4, -3.2, 1.2), 45, "7f8cff", 2.0)
+
+
+def staged():
+    booth()
     place(lambda: mina((-.5, -.15, .82), (.3, -.62, 1.06)), (-.92, -.2, 0), 48)
     place(lambda: stamp((-.74, -.3, 1.72)), (.95, .35, .12), -22, .92)
     place(lambda: page(.46, .56), (.32, -.45, 1.17), -12, 1, -18)
     place(lumi, (0, -.1, 1.62), 8, .75)
     place(panel, (0, -.1, 3.55), 0, 1.02, 0)
     text("It wants two. You gave one.", 0, 4.5, .19, WHITE, 1.2, bold=0, y=-.1)
-    light((-2.4, -3.2, 3.2), 190, "ffd2a0", 1.2)
-    light((2.6, 1.4, 2.6), 260, "4a6cff", 1.0)
-    light((1.4, -3.2, 1.2), 45, "7f8cff", 2.0)
     return (0, -9, 2.15), (0, 0, 2.05), 56, (1080, 1920)
 
 
@@ -328,6 +335,7 @@ def render(name):
     print(f"{name}: {time.time() - start:.1f} s", flush=True)
 
 
-os.makedirs(ARGS.out, exist_ok=True)
-for shot in [ARGS.only] if ARGS.only else SHOTS:
-    render(shot)
+if __name__ == "__main__":
+    os.makedirs(ARGS.out, exist_ok=True)
+    for shot in [ARGS.only] if ARGS.only else SHOTS:
+        render(shot)
