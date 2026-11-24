@@ -5,20 +5,18 @@ import argparse
 import hashlib
 import json
 import os
-import shutil
 import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SHARE = os.path.expanduser("~/.local/share")
 KOKORO, CHATTERBOX = f"{SHARE}/kokoro/venv/bin/python", f"{SHARE}/chatterbox/venv/bin/python"
-VOICES = {"stamp": 9, "lumi": 6}  # numbers in voices.py; Mina is played by acting.py
-MINA = f"{SHARE}/chatterbox/bella.wav"
+VOICES = {"mina": "Aoede", "stamp": "Algenib", "lumi": "Puck"}  # voices of gemini.py, which also says how they act
 
 p = argparse.ArgumentParser(
     description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
-    epilog="No environment variable. Needs ffmpeg, Blender, Kokoro and Chatterbox (see voices.py and acting.py), and\n"
-           f"the voice Mina imitates in {MINA}.\n\nexample:\n"
+    epilog="environment: GEMINI_API_KEY, or in .env (see gemini.py), only to make new voices.\n"
+           "Needs ffmpeg, Blender, and the environments of Kokoro (numpy) and Chatterbox (faster-whisper).\n\nexample:\n"
            "  python3 videos/episode.py videos/episodes/ep0.json --out ~/Videos/yt-publisher")
 p.add_argument("episode", help="JSON of the episode")
 p.add_argument("--out", default=".", help="directory of the MP4 (default: current)")
@@ -65,32 +63,26 @@ def wav(n):
 
 
 def stale(n, text):
-    """Whether line n must be said again: no sound yet, or another text. Never when dub.py has a take of it."""
+    """Whether line n must be said again: no sound yet, or another voice or text. Never when dub.py has a take of it."""
     if dubbed(n):
         return False
     mark = wav(n) + ".txt"
     return not (os.path.exists(wav(n)) and os.path.exists(mark) and open(mark).read() == text)
 
 
-def keep(source, n, text):
-    shutil.move(source, wav(n))
-    with open(wav(n) + ".txt", "w") as f:
-        f.write(text)
-
-
 texts = [line["text"] for line in EP["lines"]]
-for n, line in enumerate(EP["lines"]):
-    who = line["who"]
-    if who in VOICES and stale(n, texts[n]):
-        run(KOKORO, f"{HERE}/voices.py", "--only", who, "--voice", str(VOICES[who]), "--say", texts[n], "--out", work, cap="2G")
-        keep(f"{work}/{who}-line.wav", n, texts[n])
-for take in EP.get("mina_takes", []):
-    if any(stale(n, texts[n]) for n in take):
-        out = run(CHATTERBOX, "-W", "ignore", f"{HERE}/acting.py", "--ref", MINA, "--out", work, "--say",
-                  " ".join(texts[n] for n in take), "--cut", *(str(len(texts[n].split())) for n in take), cap="5G")
-        print("\n".join(s for s in out.splitlines() if "try" in s or "clean" in s), flush=True)
-        for k, n in enumerate(take):
-            keep(f"{work}/bella-acted-{k}.wav", n, texts[n])
+for who, voice in VOICES.items():
+    mine = [n for n, line in enumerate(EP["lines"]) if line["who"] == who]
+    if not any(stale(n, f"{voice}: {texts[n]}") for n in mine):
+        continue
+    # one take for all the lines of a character, so that it keeps one intonation; another text is another take
+    takes = f"{work}/gemini-{hashlib.sha256(repr([texts[n] for n in mine]).encode()).hexdigest()[:8]}"
+    run(sys.executable, f"{HERE}/gemini.py", A.episode, "--only", who, "--voices", voice, "--out", takes)
+    print(run(CHATTERBOX, "-W", "ignore", f"{HERE}/cut.py", f"{takes}/{who}-{voice}.wav", "--lines", *(texts[n] for n in mine),
+              "--out", *(wav(n) for n in mine), cap="2G").strip(), flush=True)
+    for n in mine:
+        with open(wav(n) + ".txt", "w") as f:
+            f.write(f"{voice}: {texts[n]}")
 print("voices: done", flush=True)
 step("voices")
 print("mix:", run(KOKORO, f"{HERE}/mix.py", "--episode", A.episode, "--dir", work, "--dub", dub).strip(), flush=True)

@@ -9,12 +9,11 @@
     {"who": "lumi", "text": "dumb.", "before": 0.5},
     {"who": "lumi", "text": "Ask him directly why he refused.", "before": 0.6}
   ],
-  "mina_takes": [[1, 3]],
   "cues": {
     "bams": ["s0-.3"], "cross": ["s0-.3", 1e9], "page_in": 0.1, "chimes": ["e1+.3"], "lumi_in": "e1+.2",
     "lumi_point": "s6", "blinks": ["e5+.1"],
-    "shots": [[0, "WIDE"], ["s0-.55", "DESK"], ["s1-.08", "MINA"], ["e1+.15", "WIDE"], ["s2-.08", "LUMI"],
-              ["s3-.08", "MINA"], ["s4-.08", "WIDE"], ["s5-.2", "STAMP"], ["s6-.1", "WIDE"], ["e6+.1", "MINA"]],
+    "shots": [[0, "WIDE"], ["s0-.55", "DESK"], ["s1-.08", "MINA"], ["e1+.15", "WIDE"], ["s2-.08", "LUMI"], ["m2", "DESK"],
+              ["s3-.08", "MINA"], ["s4-.08", "WIDE"], ["m4+.4", "LUMI"], ["s5-.2", "STAMP"], ["s6-.1", "WIDE"], ["e6+.1", "MINA"]],
     "poses": [[0, "OFFER"], ["s0", "REST"], ["s1", "SHRUG"], ["e1+.3", "REST"]],
     "looks": [[0, "STAMP"], ["e1+.5", "LUMI"], ["e6+.35", "STAMP"]]
   }
