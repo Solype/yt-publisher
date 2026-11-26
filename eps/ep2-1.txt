@@ -1,0 +1,24 @@
+EP 2, PART 1 : THE RECIPES
+Scene de départ :
+Mina et Stamp, Lumi au dessus, la feuille vient d'être refusée
+
+Mina : Parser ?!
+Stamp : here ! (shows Parser │ println("hello" │ expected ")")
+Mina : but the lexer said yes !
+Lumi : the lexer only checks the words, the parser checks how you put them together
+	(schema : les carrés de l'ep1, [WORD println] [SYMBOL (] [STRING "hello"], bien alignés)
+	(les mêmes carrés mélangés, "hello" ( println : le lexer dit toujours ACCEPTED)
+Mina : so he knows what I want to write ?
+Lumi : no, he only has recipes, we call them a grammar
+	(schema : CALL = WORD ( VALUE ) , chaque ingrédient est un carré vide)
+	a call is a word, an open parenthesis, a value, and a close parenthesis
+Mina : and what is a value ?
+Lumi : another recipe !
+	(schema : VALUE = STRING | NUMBER | NUMBER + VALUE)
+	a string, a number, or a number, plus, another value
+Mina : wait, there is a value inside the value ?
+Lumi : yes, so you can add as many numbers as you want
+	(schema : 1 + 2 + 3, les carrés VALUE s'emboîtent de droite à gauche)
+Mina : okay, but how does he know which recipe I am cooking ?
+Stamp : I have a pile.
+(coupe au noir)

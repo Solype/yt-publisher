@@ -29,14 +29,17 @@ with wave.open(A.take) as w:
     x = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
 
 
+SOUNDS = {"too": "two", "to": "two"}  # words that sound the same
+
+
 def plain(text):
-    return re.sub(r"[^a-z0-9 ]", "", text.lower()).split()
+    return [SOUNDS.get(w, w) for w in re.sub(r"<.*?>|[^a-z0-9 ]", "", text.lower()).split()]
 
 
 def silences():
     """The (start, end) of every silence of 80 ms or more inside the take."""
     hop = sr // 100
-    on = np.flatnonzero([np.abs(x[i:i + hop]).max() > .02 for i in range(0, len(x), hop)])
+    on = np.flatnonzero([np.abs(x[i:i + hop]).max() > .04 for i in range(0, len(x), hop)])
     return [((a + 1) / 100, b / 100) for a, b in zip(on, on[1:]) if b - a > 8]
 
 
@@ -58,11 +61,19 @@ if len(A.lines) > 1:
             j = same[first]
         elif first - 1 in same and same[first - 1] + 1 < len(heard):
             j = same[first - 1] + 1
+        elif (before := max((i for i in same if i < first), default=None)) is not None and \
+                (after := min((i for i in same if i >= first), default=None)) is not None and same[after] - same[before] > 1:
+            # misheard words on both sides: share the heard words between the wanted ones, in proportion
+            j = same[before] + 1 + round((first - before - 1) * (same[after] - same[before] - 1) / (after - before - 1))
+            j = min(max(j, same[before] + 1), same[after])
         else:
             sys.exit(f"cannot cut before {flat[first]!r}: heard {' '.join(h[0] for h in heard)}")
         near = (heard[j - 1][1].end + heard[j][1].start) / 2
-        a, b = min(silences(), key=lambda s: max(s[0] - near, near - s[1], 0), default=(0, 0))
-        if not b or max(a - near, near - b) > .3 or (a + b) / 2 <= marks[-1]:
+        # the longest one around: the closest can be inside the last word, before its final t; and whisper can place
+        # a short last word half a second early, inside the word before it
+        around = [s for s in silences() if max(s[0] - near, near - s[1]) <= .6]
+        a, b = max(around, key=lambda s: s[1] - s[0], default=(0, 0))
+        if not b or (a + b) / 2 <= marks[-1]:
             sys.exit(f"no silence near {near:.2f} s, before {flat[first]!r}")
         marks.append((a + b) / 2)
 marks.append(len(x) / sr)

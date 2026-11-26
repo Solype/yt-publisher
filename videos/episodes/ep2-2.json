@@ -1,0 +1,48 @@
+{
+  "lead": 0.5, "tail": 0.5, "black": 0.3,
+  "lines": [
+    {"who": "mina", "text": "Okay, but how does he know which recipe I am cooking?", "before": 0},
+    {"who": "stamp", "text": "I have a stack.", "before": 0.5},
+    {"who": "mina", "text": "A stack of what?", "before": 0.4},
+    {"who": "lumi", "text": "Of tokens. Look, he reads them one by one, and he can only do two things.", "before": 0.2},
+    {"who": "lumi", "text": "The first one: he puts the token on top of the stack. This is a shift.", "before": 0.3},
+    {"who": "lumi", "text": "The second one: when the top of the stack is a full recipe, he replaces it. This is a reduce.", "before": 0.4},
+    {"who": "mina", "text": "So the one becomes a value?", "before": 0.4},
+    {"who": "lumi", "text": "Not yet! A plus is coming. Shift, shift.", "before": 0.2},
+    {"who": "mina", "text": "And now the two is a value.", "before": 0.4},
+    {"who": "lumi", "text": "And number, plus, value...", "before": 0.3},
+    {"who": "mina", "text": "...is a value too!", "before": 0.1},
+    {"who": "lumi", "text": "Shift the parenthesis, and the four of them...", "before": 0.3},
+    {"who": "mina", "text": "...are a call!", "before": 0.1},
+    {"who": "lumi", "text": "When only the first recipe is left, he accepts.", "before": 0.4},
+    {"who": "mina", "text": "And all the boxes are still inside?", "before": 0.4},
+    {"who": "lumi", "text": "Yes, this is a tree.", "before": 0.2},
+    {"who": "mina", "text": "But how does he choose between shift and reduce?", "before": 1.0},
+    {"who": "stamp", "text": "I look at my map.", "before": 0.5},
+    {"who": "mina", "text": "Map?", "before": 0.4}
+  ],
+  "cues": {
+    "cross": [0, 1e9],
+    "chimes": ["s3-.1", "m4-.4", "m4+.2", "m4+.8", "m7", "e7-.3", "m8", "m10", "s11+.7", "m12", "e13-.5", "s15", "s15+.4", "s15+.9"],
+    "lumi_looks": [[0, "MINA"], ["s1-.2", "STAMP"], ["s2", "MINA"], ["m3", "CAMERA"], ["s6", "MINA"], ["s7", "CAMERA"], ["s8", "MINA"], ["s9", "CAMERA"],
+                   ["s10", "MINA"], ["s11", "CAMERA"], ["s12", "MINA"], ["s13", "CAMERA"], ["s14", "MINA"], ["s15", "CAMERA"], ["s16", "MINA"],
+                   ["s17-.2", "STAMP"]],
+    "boards": [
+      ["s3-.1", "s15-.2", "pile", "PARSER", ["print", "(", "1", "+", "2", ")"], ["WORD", "SYMBOL", "NUMBER", "SYMBOL", "NUMBER", "SYMBOL"],
+       ["m4-.4", "m4+.2", "m4+.8", "m7", "e7-.3", "s11+.7"], [["VALUE", 4, 4, "m8"], ["VALUE", 2, 4, "m10"], ["CALL", 0, 5, "m12"]], ["ACCEPTED", "e13-.5"]],
+      ["s15-.1", "s16-.1", "tree", "TREE",
+       [["CALL", "", 0, 0.75, -1], ["WORD", "print", -1.2, 0.2, 0], ["SYMBOL", "(", -0.4, 0.2, 0], ["VALUE", "", 0.4, 0.2, 0], ["SYMBOL", ")", 1.2, 0.2, 0],
+        ["NUMBER", "1", -0.3, -0.35, 3], ["SYMBOL", "+", 0.4, -0.35, 3], ["VALUE", "", 1.1, -0.35, 3], ["NUMBER", "2", 1.1, -0.9, 7]],
+       ["s15", "s15+.2", "s15+.25", "s15+.3", "s15+.35", "s15+.55", "s15+.6", "s15+.65", "s15+.9"], 0.72]
+    ],
+    "blinks": ["s6", "e16"],
+    "shots": [[0, "MINA"], ["m0+.2", "WIDE"], ["s1-.1", "STAMP"], ["s2-.1", "MINA"], ["s3-.1", "WIDE"], ["m3-.4", "PANEL"], ["e3-.9", "MINA"],
+              ["s4-.1", "PANEL"], ["e4-.6", "WIDE"], ["m5-.4", "PANEL"], ["s6-.1", "MINA"], ["s7-.1", "PANEL"], ["s8-.1", "MINA"], ["m8-.3", "PANEL"],
+              ["s9-.1", "WIDE"], ["m9", "PANEL"], ["s10-.1", "MINA"], ["m10-.2", "PANEL"], ["s11-.1", "WIDE"], ["s11+.5", "PANEL"],
+              ["s12-.1", "MINA"], ["m12-.2", "PANEL"], ["s13-.1", "WIDE"], ["e13-.9", "PANEL"], ["s14-.1", "MINA"], ["s15-.1", "PANEL"],
+              ["s16-.1", "MINA"], ["m16", "WIDE"], ["s17-.2", "STAMP"], ["s18-.1", "MINA"]],
+    "poses": [[0, "OFFER"], ["m0", "SHRUG"], ["e0", "REST"], ["s2", "SHRUG"], ["e2", "REST"], ["s6", "SHRUG"], ["e6", "REST"], ["s8", "POINT"], ["e8", "REST"],
+              ["s10", "OFFER"], ["e10", "REST"], ["s12", "OFFER"], ["e12", "REST"], ["s14", "SHRUG"], ["e14", "REST"], ["s16", "SHRUG"], ["e16", "REST"], ["s18", "SHRUG"], ["e18", "REST"]],
+    "looks": [[0, "LUMI"], ["s1-.2", "STAMP"], ["s3-.2", "LUMI"], ["s16+.3", "STAMP"]]
+  }
+}

@@ -1,0 +1,29 @@
+EP 2, PART 5 : THE TABLE
+Scene de départ :
+Mina reprend sa feuille, Stamp a une grande table à la place de la carte
+
+Mina : where is the map ?
+Lumi : a map is slow to read, so he writes it in a table
+	one line per room, one column per token
+	(schema : la carte se plie en table, 10 lignes, les cases s'allument : S = shift, R = reduce, vide = refused)
+	he finds his room, he looks at the next token, and he does what the box says
+Mina : that is all ?
+Lumi : that is all, and it has a name, L R 1
+	L, he reads from left to right
+	(schema : L, une flèche sous println("hello"))
+	R, he builds from the small pieces to the big one, so the last recipe is the biggest
+	(schema : R, VALUE puis CALL, de bas en haut)
+	and 1, he looks one token ahead
+	(schema : 1, la loupe)
+Mina : let me see my line !
+	(schema : println ( "hello" puis fin de ligne : salle 0, 2, 3, 5, et la case [5, end of line] est vide, rouge)
+	room 5, end of line... the box is empty !
+Lumi : and in this line, only one box is not empty
+Mina : the close parenthesis !
+Mina réécrit toute la ligne, très vite : check again !
+Stamp : Lexer... accepted. (tampon)
+	Parser... accepted. (tampon, shows the tree : CALL -> WORD, VALUE -> "hello")
+Mina : finally !
+Stamp : Names... refused. (bam, shows Names │ pritnln("hello") │ undefined: pritnln)
+Mina : oh no...
+(coupe au noir)

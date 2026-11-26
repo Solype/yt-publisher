@@ -1,0 +1,15 @@
+Scene de départ :
+Stamp
+
+Mina Approche avec une feuille et le pose devant stamp :
+- Staaaamp, can you give it to the machine ?
+Stamp : I cannot your text is unreadable, refused.
+Mina: Whyyy ? can you recheck
+Stamp : refused
+Mina : haan (soupir)
+Mina se retourne : tell me, Lumi, why is stamp so mean with me
+Lumi : he is not mean to you, (se tourne vers stamp)
+	he is just strict... and not so creative nor smart.
+	Just ask him
+Mina se tourne et demande: why did you refused ?
+Stamp : here ! (shows Lexer          │ println("hello)             │ newline in string)

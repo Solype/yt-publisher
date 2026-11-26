@@ -185,7 +185,7 @@ FONT = []
 
 def text(s, x, z, size, color, glow=1.0, align="CENTER", bold=.012, y=0.0):
     if not FONT:
-        path = subprocess.run(["fc-match", "-f", "%{file}", "Inter:bold"], capture_output=True, text=True).stdout
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Inter-Bold.ttf")  # beside this file, on every system
         FONT.append(bpy.data.fonts.load(path))
     bpy.ops.object.text_add(location=(x, y, z), rotation=(math.pi / 2, 0, 0))
     o = bpy.context.object

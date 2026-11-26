@@ -1,0 +1,34 @@
+EP 2, PART 2 : THE STACK
+Scene de départ :
+Stamp a une stack vide à côté de lui, Mina et Lumi en face
+Exemple : print(1 + 2)
+Tableau : en haut la rangée INPUT (les mots à lire), en bas le bac STACK (fermé à gauche, ouvert à droite)
+et une flèche TOP sous le dernier token posé.
+
+Mina : okay, but how does he know which recipe I am cooking ?
+Stamp : I have a stack.
+Mina : a stack of what ?
+Lumi : of tokens, look, he reads them one by one, and he can only do two things
+	the first one, he puts the token on top of the stack, this is a shift
+	(schema : print quitte INPUT et entre dans la STACK, puis "(", puis 1 ; la flèche TOP suit)
+	the second one, when the top of the stack is a full recipe, he replaces it, this is a reduce
+Mina : so the one becomes a value ?
+Lumi : not yet ! a plus is coming. shift, shift
+	(schema : "+" puis 2 entrent dans la STACK)
+Mina : and now the two is a value
+	(schema : un carré VALUE entoure 2)
+Lumi : and number, plus, value...
+Mina : ...is a value too !
+	(schema : un carré VALUE entoure 1 + VALUE)
+Lumi : shift the parenthesis, and the four of them...
+	(schema : ")" entre dans la STACK : print ( VALUE ) )
+Mina : ...are a call !
+	(schema : un grand carré CALL englobe tout, les petits carrés restent dedans)
+Lumi : when only the first recipe is left, he accepts
+Mina : and all the boxes are still inside ?
+Lumi : yes, this is a tree
+	(schema : CALL -> print ( VALUE ) ; VALUE -> 1 + VALUE ; VALUE -> 2)
+Mina : but how does he choose between shift and reduce ?
+Stamp : I look at my map.
+Mina : map ?
+(coupe au noir)

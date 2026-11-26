@@ -1,0 +1,28 @@
+EP 2, PART 3 : THE MAP
+Scene de départ :
+Stamp déplie une carte, 10 salles numérotées de 0 à 9
+
+Mina : another maze ?
+Lumi : yes, but here the doors are not letters, the doors are tokens
+	(schema : salle 0 -WORD-> salle 2 -(-> salle 3)
+Mina : and what is written in the rooms ?
+Lumi : a recipe with a dot, the dot is where you are in the recipe
+	(schema : salle 2, CALL = WORD . ( VALUE ) , le point avance quand la bille passe la porte)
+Mina : so in room 3, I need a value
+Lumi : and a value is a string, or a number, so all those recipes are in the room too, with the dot at the beginning
+	(schema : salle 3, CALL = WORD ( . VALUE ) , et VALUE = . STRING , VALUE = . NUMBER , VALUE = . NUMBER + VALUE)
+	(la bille prend la porte STRING, arrive salle 5 : VALUE = STRING .)
+Mina : the dot is at the end !
+Lumi : so the recipe is full, reduce
+	and now the trick, he goes back to the room where the value started
+	(schema : la bille recule de 5 à 3, STRING devient VALUE)
+	and he takes the door VALUE
+	(schema : la bille passe de 3 à 4)
+Mina : how does he remember the way back ?
+Stamp : the pile.
+Lumi : he keeps the number of the rooms in the pile
+	(schema : pile 0 2 3 5, on enlève 5, il reste 0 2 3, on ajoute 4)
+Mina : he is not that dumb...
+Lumi : wait, there is one room where he is lost
+	(schema : la salle 6 clignote en rouge)
+(coupe au noir)

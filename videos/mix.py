@@ -30,9 +30,9 @@ def load(name, folder):
         return np.frombuffer(w.readframes(w.getnframes()), np.int16) / 32768
 
 
-def trim(x, floor=.01):
+def trim(x):
     """The sound without its silent ends, and the seconds cut before it."""
-    on = np.flatnonzero(np.abs(x) > floor)
+    on = np.flatnonzero(np.abs(x) > max(.01, .06 * np.abs(x).max()))  # breaths and microphones are not silent
     if not len(on):
         raise SystemExit("a take is silent")
     first = max(0, on[0] - SR // 100)
@@ -45,7 +45,7 @@ def line_sound(n):
     if not ARGS.dub or not os.path.exists(os.path.join(ARGS.dub, name + ".wav")):
         return trim(load(name, ARGS.dir))[0], None
     x = load(name, ARGS.dub)
-    x, skipped = trim(x, max(.01, .06 * np.abs(x).max()))  # a microphone is never silent
+    x, skipped = trim(x)
     with open(os.path.join(ARGS.dub, name + ".json")) as f:
         return x, json.load(f)["at"] + skipped
 
@@ -133,9 +133,18 @@ def stamp_time(t):
 with open(os.path.join(ARGS.dir, "captions.ass"), "w") as f:
     f.write("[Script Info]\nPlayResX: 1080\nPlayResY: 1920\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, "
             "PrimaryColour, OutlineColour, BackColour, Bold, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, "
-            "MarginV\nStyle: s,Inter,64,&H00F4F7F8,&H00140A08,&H00000000,0,1,3,0,8,90,90,88\n\n[Events]\n"
+            "MarginV\nStyle: s,Inter,60,&H00F4F7F8,&H00140A08,&H00000000,0,1,3,0,8,50,50,64\n\n[Events]\n"
             "Format: Layer, Start, End, Style, Text\n")
     for n, line in enumerate(lines):
         end = min(line["end"] + .25, lines[n + 1]["start"]) if n + 1 < len(lines) else line["end"] + .4
-        f.write(f"Dialogue: 0,{stamp_time(line['start'])},{stamp_time(end)},s,{{\\fad(60,60)}}{line['text']}\n")
+        text = re.sub("<.*?> ?", "", line["text"])
+        parts = re.split(r"(?<=[.!?]) (?=[A-Z])", text)
+        if len(text) < 70 or min(map(len, parts)) < 20:
+            parts = [text]  # it fits in two lines, or a sentence is too short to read alone
+        size, at = sum(map(len, parts)), line["start"]
+        for i, part in enumerate(parts):
+            # shortcut: the time of each sentence is guessed from its length, cut.py knows the real one
+            until = end if i == len(parts) - 1 else at + (line["end"] - line["start"]) * len(part) / size
+            f.write(f"Dialogue: 0,{stamp_time(at)},{stamp_time(until)},s,{{\\fad(60,60)}}{part}\n")
+            at = until
 print(f"{total:.1f} s, " + ", ".join(f"{li['who']} {li['start']:.1f}-{li['end']:.1f}" for li in lines))

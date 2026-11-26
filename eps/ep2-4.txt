@@ -1,0 +1,26 @@
+EP 2, PART 4 : THE ONE
+Scene de départ :
+gros plan sur la salle 6 de la carte
+
+Mina : what is wrong with room 6 ?
+Lumi : look, there are two recipes inside
+	(schema : salle 6, VALUE = NUMBER .  et  VALUE = NUMBER . + VALUE)
+Mina : the first one is full, so reduce !
+Lumi : and the second one is not over, so shift !
+Stamp : I am stuck.
+	(les yeux de Stamp clignotent)
+Mina : poor Stamp...
+Lumi : so we let him look at one token, the next one, only one
+	(schema : println ( 10 ? , une loupe se pose sur le carré suivant)
+	if it is a plus, the value is not over, shift
+	(schema : 10 [+] 2 , la bille prend la porte + vers la salle 8)
+	if it is a close parenthesis, the value is over, reduce
+	(schema : 2 [)] , un carré VALUE englobe 2, puis 10 + 2)
+Mina : and if it is something else ?
+Lumi : then there is no door
+	every full recipe has the list of the tokens that can come after it
+	(schema : salle 5, VALUE = STRING .  avec l'étiquette "only if )" )
+Mina : so with my line...
+Stamp : expected ")".
+Mina : ooooh
+(coupe au noir)

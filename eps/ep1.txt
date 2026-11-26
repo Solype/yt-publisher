@@ -1,0 +1,37 @@
+Scene de départ :
+Mina et Stamp, Lumi hors champs
+
+Stamp : here ! (show the previous error from ep0)
+Mina : Lumi, why is this an error ?
+Lumi : this is a Lexer error
+Mina : Lexer error ? what is that ?
+Lumi : before annalysing your code, Stamp slice your text into little pieces
+Mina : why ?
+Lumi : because it helps him to understand, for that, he uses what we call state machines.
+Mina : what is that ?
+Lumi : imagine multiple nodes, like a maze
+schema de 
+A-Z suivi de (a-z*)
+	here, to enter the maze, you need to find a letter between A and Z
+	(schema : S entre, une bille arrive dans la salle "word")
+	then, each small letter makes you turn around in the same room
+	(schema : t, a, m, p tournent dans la salle)
+Mina : and if it is something else ?
+Lumi : there is no door for it, so you go out, with all the letters you picked up
+	(schema : "(" n'a pas de porte, la bille sort avec [Stamp])
+	this little piece is called a token
+Mina : and there is only one maze ?
+Lumi : no, words, numbers, strings... each one has its own, with more doors, but it is the same idea
+	for a string, you enter with a quote, and you only go out with another quote
+	(schema : " entre, tout tourne dans la salle "string" sauf " et la fin de ligne, " sort)
+Mina : so, my line...
+	(schema : println("hello) : " entre, h e l l o ) tournent, puis la fin de la ligne)
+	I forgot the second quote !
+Lumi : yes, he was lost in the maze, and then the line was over
+Stamp : newline in string. I said it.
+Mina corrige vite la feuille, et remplace ) par un guillemet : now, check again !
+Stamp : Lexer... accepted. (shows the tokens : [println] [(] ["hello"])
+Mina : yes !
+Stamp : Parser... refused. (bam)
+Mina : Parser ?!
+(coupe au noir)

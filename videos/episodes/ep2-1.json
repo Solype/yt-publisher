@@ -1,0 +1,37 @@
+{
+  "lead": 0.5, "tail": 0.5, "black": 0.3,
+  "lines": [
+    {"who": "mina", "text": "Parser?!", "before": 0},
+    {"who": "stamp", "text": "Here!", "before": 0.3},
+    {"who": "mina", "text": "But the lexer said yes!", "before": 1.8},
+    {"who": "lumi", "text": "The lexer only checks the words. The parser checks how you put them together.", "before": 0.2},
+    {"who": "mina", "text": "So, he knows what I want to write?", "before": 0.3},
+    {"who": "lumi", "text": "No, he only has recipes. We call them a grammar.", "before": 0.2},
+    {"who": "lumi", "text": "A call is a word, an open parenthesis, a value, and a close parenthesis.", "before": 0.3},
+    {"who": "mina", "text": "And what is a value?", "before": 0.4},
+    {"who": "lumi", "text": "Another recipe!", "before": 0.2},
+    {"who": "lumi", "text": "A string, a number, or a number, plus, another value.", "before": 0.3},
+    {"who": "mina", "text": "Wait, there is a value inside the value?", "before": 0.4},
+    {"who": "lumi", "text": "Yes, so you can add as many numbers as you want.", "before": 0.2},
+    {"who": "mina", "text": "Okay, but how does he know which recipe I am cooking?", "before": 1.2}
+  ],
+  "cues": {
+    "cross": [0, 1e9], "chimes": ["e1+.1", "s3+.7", "s6-.2", "s9-.2", "m11-.3", "m11+.5", "m11+1.3"],
+    "lumi_looks": [[0, "MINA"], ["m5", "CAMERA"], ["s7", "MINA"], ["s8", "CAMERA"], ["s10", "MINA"], ["m11", "CAMERA"], ["s12", "MINA"]],
+    "boards": [
+      ["e1+.1", "s2-.1", "error", "PARSER", "println(\"hello\"", "", "expected \")\""],
+      ["s3+.7", "s4-.1", "tokens", "LEXER", ["println", "(", "\"hello\""], ["WORD", "SYMBOL", "STRING"], [2, 1, 0], "m3-.6"],
+      ["s6-.2", "s7-.1", "recipe", "CALL", [["WORD", "(", "VALUE", ")"]], ["s6+1.1", "m6-.9", "m6+.5", "e6-1.3"]],
+      ["s9-.2", "s10-.1", "recipe", "VALUE", [["STRING"], ["NUMBER"], ["NUMBER", "+", "VALUE"]], ["s9+.1", "s9+1", "m9-.2", "m9+.6", "m9+1.2"]],
+      ["s11+.6", "s12-.1", "nest", "VALUE", ["1", "+", "2", "+", "3"], [[4, "m11-.3"], [2, "m11+.5"], [0, "m11+1.3"]]]
+    ],
+    "blinks": ["s4"],
+    "shots": [[0, "MINA"], ["s1-.1", "STAMP"], ["e1+.1", "PANEL"], ["s2-.1", "MINA"], ["s3-.1", "LUMI"], ["s3+.7", "PANEL"],
+              ["e3-1.2", "STAMP"], ["s4-.1", "MINA"], ["m4+.2", "STAMP"], ["s5-.1", "LUMI"], ["m5-.4", "STAMP"], ["m5+.4", "LUMI"], ["s6-.2", "PANEL"],
+              ["s7-.1", "MINA"], ["s8-.1", "LUMI"], ["s9-.2", "PANEL"], ["s10-.1", "MINA"], ["m10+.2", "WIDE"], ["s11-.1", "LUMI"], ["s11+.6", "PANEL"],
+              ["s12-.1", "MINA"], ["m12", "WIDE"], ["e12-.6", "MINA"]],
+    "poses": [[0, "SHRUG"], ["s1", "REST"], ["s2", "POINT"], ["e2", "REST"], ["s4", "SHRUG"], ["e4", "REST"], ["s7", "SHRUG"], ["e7", "REST"],
+              ["s10", "POINT"], ["e10", "REST"], ["s12", "OFFER"], ["m12", "SHRUG"], ["e12", "REST"]],
+    "looks": [[0, "STAMP"], ["s2", "LUMI"], ["s12+.2", "STAMP"], ["m12", "LUMI"]]
+  }
+}

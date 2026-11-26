@@ -14,9 +14,9 @@ from env import env
 
 # character: (how to act, voices to try); voices and their adjectives: aistudio.google.com/docs/speech-generation
 CAST = {
-    "mina": ("a young developer, indignant and incredulous, talking fast, her voice rising", ["Leda", "Laomedeia", "Aoede"]),
+    "mina": ("a young developer, whiny and indignant, dragging out the long vowels, her voice rising", ["Leda", "Laomedeia", "Aoede"]),
     "stamp": ("a bored customs officer: flat, cold, final, no emotion at all", ["Alnilam", "Algenib", "Charon"]),
-    "lumi": ("a mischievous guide, warm and amused, sly deadpan on 'dumb', like a friend letting out a secret",
+    "lumi": ("a mischievous guide, warm and amused, sly when making fun of someone, like a friend letting out a secret",
              ["Puck", "Sadachbia", "Zubenelgenubi"]),
 }
 
