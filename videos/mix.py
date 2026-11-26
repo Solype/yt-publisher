@@ -133,7 +133,7 @@ def stamp_time(t):
 with open(os.path.join(ARGS.dir, "captions.ass"), "w") as f:
     f.write("[Script Info]\nPlayResX: 1080\nPlayResY: 1920\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, "
             "PrimaryColour, OutlineColour, BackColour, Bold, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, "
-            "MarginV\nStyle: s,Inter,60,&H00F4F7F8,&H00140A08,&H00000000,0,1,3,0,8,50,50,64\n\n[Events]\n"
+            "MarginV\nStyle: s,Inter,60,&H00F4F7F8,&H00140A08,&H00000000,0,1,3,0,2,50,50,360\n\n[Events]\n"
             "Format: Layer, Start, End, Style, Text\n")
     for n, line in enumerate(lines):
         end = min(line["end"] + .25, lines[n + 1]["start"]) if n + 1 < len(lines) else line["end"] + .4

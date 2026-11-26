@@ -148,10 +148,12 @@ for image in sorted(os.listdir(frames)):
     if image.endswith(".png"):
         with open(f"{frames}/{image}", "rb") as f:
             images += f.read()
-# from the work directory, so that the filter reads captions.ass without a drive letter
+# from the work directory, so that the filter reads captions.ass without a drive letter; Inter-Bold.ttf from here,
+# as Inter is not installed everywhere
+fonts = os.path.relpath(HERE, work).replace(os.sep, "/")
 run("ffmpeg", "-loglevel", "error", "-y", "-framerate", str(T["fps"] // int(STEP)), "-f", "image2pipe", "-c:v", "png", "-i", "-",
     "-i", "mix.wav",
-    "-vf", f"fps={T['fps']},ass=captions.ass,fade=out:st={T['cut']}:d=0.04,scale=trunc(iw/2)*2:trunc(ih/2)*2",
+    "-vf", f"fps={T['fps']},ass=captions.ass:fontsdir={fonts},fade=out:st={T['cut']}:d=0.04,scale=trunc(iw/2)*2:trunc(ih/2)*2",
     "-af", "loudnorm=I=-14:TP=-1.5", "-ar", "48000", "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p", "-threads", "4",
     "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", mp4, cwd=work, feed=images)
 print(mp4)
